@@ -1,0 +1,10 @@
+apply plugin: 'java'
+
+repositories {
+	mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+	'org.eclipse.jgit:org.eclipse.jgit:4.1.1.201511131810-r'
+}
