@@ -1,11 +1,20 @@
 package us.yuxin.gitstats.us.yuxin.gitstats.app
 
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.Session
+import com.jcraft.jsch.agentproxy.RemoteIdentityRepository
+import com.jcraft.jsch.agentproxy.connector.SSHAgentConnector
+import com.jcraft.jsch.agentproxy.usocket.JNAUSocketFactory
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.diff.DiffFormatter
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
+import org.eclipse.jgit.transport.JschConfigSessionFactory
+import org.eclipse.jgit.transport.OpenSshConfig
+import org.eclipse.jgit.transport.SshSessionFactory
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
+import org.eclipse.jgit.util.FS
 import java.io.File
 
 
@@ -70,5 +79,67 @@ object Diff {
       println("entry:" + e)
       println(diffFormatter.format(e))
     }
+  }
+}
+
+
+object Clone {
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val sessionFactory = object:JschConfigSessionFactory() {
+      override fun configure(hc:OpenSshConfig.Host, session:Session) {
+        session.setConfig("StrictHostKeyChecking", "false");
+      }
+
+      override fun createDefaultJSch(fs:FS):JSch {
+        val con:SSHAgentConnector? =
+          if (SSHAgentConnector.isConnectorAvailable()) {
+            val usf = JNAUSocketFactory()
+            SSHAgentConnector(usf)
+          } else {
+            null
+          }
+
+        return if (con != null) {
+          val jsch = JSch()
+          jsch.identityRepository = RemoteIdentityRepository(con)
+          jsch
+        } else {
+          super.createDefaultJSch(fs)
+        }
+      }
+    }
+
+    SshSessionFactory.setInstance(sessionFactory)
+
+    val s0:String = "/Users/is/tmp/jsch0.git"
+    val s1:String = "/Users/is/tmp/jsch1.git"
+
+    Runtime.getRuntime().exec("rm -fr /Users/is/tmp/jsch0.git")
+    Runtime.getRuntime().exec("rm -fr /Users/is/tmp/jsch1.git")
+
+    //    val repo0 = FileRepositoryBuilder()
+    //      .setBare().create(File(s0))
+    //    val repo1 = FileRepositoryBuilder()
+    //      .setBare().create(File(s1))
+
+    var git = Git.cloneRepository()
+      .setURI("https://github.com/is/jsch.git")
+      .setBare(true)
+      .setDirectory(File(s0))
+      .setRemote("github")
+      .call()
+    System.out.println(git.repository)
+
+    // https://gist.github.com/quidryan/5449155
+
+
+    git = Git.cloneRepository()
+      .setURI("git@github.com:is/jsch.git")
+      .setBare(true)
+      .setDirectory(File(s1))
+      .setRemote("github")
+      .call()
+    System.out.println(git.repository)
   }
 }
