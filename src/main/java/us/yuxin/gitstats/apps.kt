@@ -1,4 +1,4 @@
-package us.yuxin.gitstats.us.yuxin.gitstats.app
+package us.yuxin.gitstats
 
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
@@ -15,24 +15,55 @@ import org.eclipse.jgit.transport.OpenSshConfig
 import org.eclipse.jgit.transport.SshSessionFactory
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
 import org.eclipse.jgit.util.FS
+import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.FileInputStream
 
 
-fun getGit():Git {
-  return Git(getRepository())
+object Utilities {
+  @JvmStatic
+  fun getGit():Git {
+    return Git(getRepository())
+  }
+
+
+  @JvmStatic
+  fun getRepository():Repository {
+    return FileRepositoryBuilder()
+      .setGitDir(File("/Users/is/src/meic2/.git"))
+      .build()
+  }
+
+
+  @JvmStatic
+  fun setupJschAgent() {
+    val sessionFactory = object:JschConfigSessionFactory() {
+      override fun configure(hc:OpenSshConfig.Host, session:Session) {
+        session.setConfig("StrictHostKeyChecking", "false");
+      }
+
+      override fun createDefaultJSch(fs:FS):JSch {
+        val jsch =  if (SSHAgentConnector.isConnectorAvailable()) {
+          val usf = JNAUSocketFactory()
+          val con = SSHAgentConnector(usf)
+          val jsch = JSch()
+          jsch.identityRepository = RemoteIdentityRepository(con);
+          jsch
+        } else {
+          super.createDefaultJSch(fs)
+        }
+        return jsch;
+      }
+    }
+
+    SshSessionFactory.setInstance(sessionFactory)
+  }
 }
-
-fun getRepository():Repository {
-  return FileRepositoryBuilder()
-    .setGitDir(File("/Users/is/src/meic2/.git"))
-    .build()
-}
-
 
 object Log {
   @JvmStatic
   fun main(args:Array<String>) {
-    val logs = getGit().log().call()
+    val logs = Utilities.getGit().log().call()
     for (rev in logs) {
       println(rev.name + " - " + rev.shortMessage)
     }
@@ -43,7 +74,7 @@ object Log {
 object Diff {
   @JvmStatic
   fun main(args:Array<String>) {
-    val repository = getRepository()
+    val repository = Utilities.getRepository()
 
     val rid0 = repository.resolve("178958f5de")
     val rid1 = repository.resolve("035aaf1e1d")
@@ -86,42 +117,13 @@ object Diff {
 object Clone {
   @JvmStatic
   fun main(args:Array<String>) {
-    val sessionFactory = object:JschConfigSessionFactory() {
-      override fun configure(hc:OpenSshConfig.Host, session:Session) {
-        session.setConfig("StrictHostKeyChecking", "false");
-      }
-
-      override fun createDefaultJSch(fs:FS):JSch {
-        val con:SSHAgentConnector? =
-          if (SSHAgentConnector.isConnectorAvailable()) {
-            val usf = JNAUSocketFactory()
-            SSHAgentConnector(usf)
-          } else {
-            null
-          }
-
-        return if (con != null) {
-          val jsch = JSch()
-          jsch.identityRepository = RemoteIdentityRepository(con)
-          jsch
-        } else {
-          super.createDefaultJSch(fs)
-        }
-      }
-    }
-
-    SshSessionFactory.setInstance(sessionFactory)
+    Utilities.setupJschAgent()
 
     val s0:String = "/Users/is/tmp/jsch0.git"
-    val s1:String = "/Users/is/tmp/jsch1.git"
+    val s1:String = "/Users/is/tmp/gitstats.git"
 
     Runtime.getRuntime().exec("rm -fr /Users/is/tmp/jsch0.git")
-    Runtime.getRuntime().exec("rm -fr /Users/is/tmp/jsch1.git")
-
-    //    val repo0 = FileRepositoryBuilder()
-    //      .setBare().create(File(s0))
-    //    val repo1 = FileRepositoryBuilder()
-    //      .setBare().create(File(s1))
+    Runtime.getRuntime().exec("rm -fr /Users/is/tmp/gitstats.git")
 
     var git = Git.cloneRepository()
       .setURI("https://github.com/is/jsch.git")
@@ -131,15 +133,27 @@ object Clone {
       .call()
     System.out.println(git.repository)
 
+
     // https://gist.github.com/quidryan/5449155
-
-
     git = Git.cloneRepository()
-      .setURI("git@github.com:is/jsch.git")
+      .setURI("ssh://git@gitlab.makenv.com:10022/yuxin/gitstats.git")
       .setBare(true)
       .setDirectory(File(s1))
       .setRemote("github")
       .call()
     System.out.println(git.repository)
+  }
+}
+
+
+object Yaml {
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val yaml = Yaml()
+    val conf = FileInputStream("etc/repository.yaml").use { s ->
+      yaml.load(s)
+    }
+    println(conf)
+    println()
   }
 }
