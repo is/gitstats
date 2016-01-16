@@ -2,67 +2,19 @@ package us.yuxin.gitstats.demo
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.jcraft.jsch.JSch
-import com.jcraft.jsch.Session
-import com.jcraft.jsch.agentproxy.RemoteIdentityRepository
-import com.jcraft.jsch.agentproxy.connector.SSHAgentConnector
-import com.jcraft.jsch.agentproxy.usocket.JNAUSocketFactory
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.diff.DiffFormatter
-import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
-import org.eclipse.jgit.transport.JschConfigSessionFactory
-import org.eclipse.jgit.transport.OpenSshConfig
-import org.eclipse.jgit.transport.SshSessionFactory
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
-import org.eclipse.jgit.util.FS
 import org.yaml.snakeyaml.Yaml
 import us.yuxin.gitstats.GSConfig
+import us.yuxin.gitstats.Utilities
+import us.yuxin.gitstats.setupJschAgent
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
 
-
-object Utilities {
-  @JvmStatic
-  fun getGit():Git {
-    return Git(getRepository())
-  }
-
-
-  @JvmStatic
-  fun getRepository():Repository {
-    return FileRepositoryBuilder()
-      .setGitDir(File("/Users/is/src/meic2/.git"))
-      .build()
-  }
-
-
-  @JvmStatic
-  fun setupJschAgent() {
-    val sessionFactory = object:JschConfigSessionFactory() {
-      override fun configure(hc:OpenSshConfig.Host, session:Session) {
-        session.setConfig("StrictHostKeyChecking", "false");
-      }
-
-      override fun createDefaultJSch(fs:FS):JSch {
-        val jsch =  if (SSHAgentConnector.isConnectorAvailable()) {
-          val usf = JNAUSocketFactory()
-          val con = SSHAgentConnector(usf)
-          val jsch = JSch()
-          jsch.identityRepository = RemoteIdentityRepository(con);
-          jsch
-        } else {
-          super.createDefaultJSch(fs)
-        }
-        return jsch;
-      }
-    }
-
-    SshSessionFactory.setInstance(sessionFactory)
-  }
-}
 
 object Log {
   @JvmStatic
@@ -121,7 +73,7 @@ object Diff {
 object Clone {
   @JvmStatic
   fun main(args:Array<String>) {
-    Utilities.setupJschAgent()
+    setupJschAgent()
 
     val s0:String = "/Users/is/tmp/jsch0.git"
     val s1:String = "/Users/is/tmp/gitstats.git"
@@ -184,5 +136,21 @@ object Config0 {
     println(repos)
     println(C)
     println(cf)
+  }
+}
+
+object Remote0 {
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val repo = FileRepositoryBuilder()
+      .setGitDir(File("/Users/is/src/meic2/.git"))
+      .build()
+
+    val git = Git(repo)
+
+    for (r in git.lsRemote().call()) {
+      println(r)
+    }
+    val config = repo.config
   }
 }

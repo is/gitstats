@@ -3,13 +3,14 @@ package us.yuxin.gitstats
 object Scanner {
   @JvmStatic
   fun main(args:Array<String>) {
+    setupJschAgent()
     run(args)
   }
 
-  val cf = GSConfig.load()
-
+  final val C = GSConfig.load()
   fun run(args:Array<String>) {
-    println("hello world")
-    println(cf)
+    for (repo in C.repositories) {
+      updateRepo(C, repo)
+    }
   }
 }

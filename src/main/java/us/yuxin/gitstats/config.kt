@@ -17,15 +17,14 @@ object GSConfig {
   public data class Repository(
     val name:String? = null,
     val path:String? = null,
-    val remotes:Map<String, String>? = null,
+    val remotes:Map<String, String>,
     val branches:List<String>? = null) {
 
-    @JsonIgnore
     public val base:String
       get() = path?: name!!
 
     public fun base(workspace:String):File {
-      return Paths.get(workspace, base).toFile()
+      return Paths.get(workspace, "git", base + ".git").toFile()
     }
   }
 
