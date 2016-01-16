@@ -1,4 +1,4 @@
-package us.yuxin.gitstats
+package us.yuxin.gitstats.demo
 
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
