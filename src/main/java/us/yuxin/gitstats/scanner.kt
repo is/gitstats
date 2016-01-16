@@ -8,7 +8,7 @@ object Scanner {
   }
 
   final val C = GSConfig.load()
-  fun run(args:Array<String>) {
+  fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
     for (repo in C.repositories) {
       updateRepo(C, repo)
     }

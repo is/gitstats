@@ -1,6 +1,5 @@
 package us.yuxin.gitstats
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File

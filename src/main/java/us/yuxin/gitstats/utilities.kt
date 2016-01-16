@@ -13,20 +13,19 @@ import org.eclipse.jgit.transport.OpenSshConfig
 import org.eclipse.jgit.transport.SshSessionFactory
 import org.eclipse.jgit.util.FS
 import java.io.File
-
-object Utilities {
-  @JvmStatic
-  fun getGit():Git {
-    return Git(getRepository())
-  }
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 
-  @JvmStatic
-  fun getRepository():Repository {
-    return FileRepositoryBuilder()
-      .setGitDir(File("/Users/is/src/meic2/.git"))
-      .build()
-  }
+fun getDefaultGit():Git {
+  return Git(getDefaultRepository())
+}
+
+fun getDefaultRepository():Repository {
+  return FileRepositoryBuilder()
+    .setGitDir(File("/Users/is/src/meic2/.git"))
+    .build()
 }
 
 
@@ -52,3 +51,11 @@ fun setupJschAgent() {
 
   SshSessionFactory.setInstance(sessionFactory)
 }
+
+val timeFormatter = DateTimeFormatter.ofPattern("YYYY.MM.dd-HH:mm:ss")
+val zoneOffset = ZoneOffset.UTC
+
+fun formatTS(ts:Int):String =
+  timeFormatter.format(
+    LocalDateTime.ofEpochSecond(
+      ts.toLong(), 0, zoneOffset))

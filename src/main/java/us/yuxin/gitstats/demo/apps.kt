@@ -8,9 +8,7 @@ import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
 import org.yaml.snakeyaml.Yaml
-import us.yuxin.gitstats.GSConfig
-import us.yuxin.gitstats.Utilities
-import us.yuxin.gitstats.setupJschAgent
+import us.yuxin.gitstats.*
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -19,9 +17,9 @@ import java.util.*
 object Log {
   @JvmStatic
   fun main(args:Array<String>) {
-    val logs = Utilities.getGit().log().call()
+    val logs = getDefaultGit().log().call()
     for (rev in logs) {
-      println(rev.name + " - " + rev.shortMessage)
+      println(formatTS(rev.commitTime) + ":" + rev.name + " - " + rev.shortMessage)
     }
   }
 }
@@ -30,7 +28,7 @@ object Log {
 object Diff {
   @JvmStatic
   fun main(args:Array<String>) {
-    val repository = Utilities.getRepository()
+    val repository = getDefaultRepository()
 
     val rid0 = repository.resolve("178958f5de")
     val rid1 = repository.resolve("035aaf1e1d")
@@ -151,6 +149,5 @@ object Remote0 {
     for (r in git.lsRemote().call()) {
       println(r)
     }
-    val config = repo.config
   }
 }

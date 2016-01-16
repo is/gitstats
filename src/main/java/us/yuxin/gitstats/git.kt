@@ -56,3 +56,25 @@ fun initRepo(gitDir:File, @Suppress("UNUSED_PARAMETER") config:GSConfig.Reposito
   }
   Git.init().setBare(true).setGitDir(gitDir).call()
 }
+
+
+data class Commit(
+  val id:String,
+  val parents:String,
+  val messages:String,
+  val lineAdded:Int,
+  val lineModified:Int,
+  val lineDeleted:Int,
+  val binaryAdded:Int,
+  val binaryModified:Int,
+  val binaryDeleted:Int,
+  val changes:List<Change>
+)
+
+
+data class Change(
+  val path:String,
+  val lineAdded:Int,
+  val lineModified:Int,
+  val lineDeleted:Int
+)
