@@ -1,5 +1,7 @@
 package us.yuxin.gitstats.demo
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
 import com.jcraft.jsch.agentproxy.RemoteIdentityRepository
@@ -16,8 +18,10 @@ import org.eclipse.jgit.transport.SshSessionFactory
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
 import org.eclipse.jgit.util.FS
 import org.yaml.snakeyaml.Yaml
+import us.yuxin.gitstats.GSConfig
 import java.io.File
 import java.io.FileInputStream
+import java.util.*
 
 
 object Utilities {
@@ -146,7 +150,7 @@ object Clone {
 }
 
 
-object Yaml {
+object Yaml0 {
   @JvmStatic
   fun main(args:Array<String>) {
     val yaml = Yaml()
@@ -155,5 +159,19 @@ object Yaml {
     }
     println(conf)
     println()
+  }
+}
+
+object Config0 {
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val mapper = YAMLMapper()
+    mapper.registerKotlinModule()
+    val reposType = mapper.typeFactory.constructCollectionLikeType(
+      ArrayList::class.java, GSConfig.Repository::class.java)
+    val repos = mapper
+      .readValue<List<GSConfig.Repository>>(
+        File("etc/repos.yaml"), reposType)
+    println(repos)
   }
 }
