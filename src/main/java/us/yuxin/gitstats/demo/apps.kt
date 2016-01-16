@@ -162,16 +162,27 @@ object Yaml0 {
   }
 }
 
+
 object Config0 {
   @JvmStatic
   fun main(args:Array<String>) {
     val mapper = YAMLMapper()
     mapper.registerKotlinModule()
+
     val reposType = mapper.typeFactory.constructCollectionLikeType(
       ArrayList::class.java, GSConfig.Repository::class.java)
+
     val repos = mapper
       .readValue<List<GSConfig.Repository>>(
         File("etc/repos.yaml"), reposType)
+
+    val C = mapper.readValue<GSConfig.Root>(
+      File("etc/gitstats.yaml"), GSConfig.Root::class.java)
+
+    val cf = GSConfig.load()
+
     println(repos)
+    println(C)
+    println(cf)
   }
 }
