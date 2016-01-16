@@ -2,6 +2,9 @@ package us.yuxin.gitstats
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder
+
 import java.io.File
 import java.nio.file.Paths
 
@@ -17,13 +20,24 @@ object GSConfig {
     val name:String? = null,
     val path:String? = null,
     val remotes:Map<String, String>,
-    val branches:List<String>? = null) {
+    val branches:String? = null) {
 
     public val base:String
       get() = path?: name!!
 
     public fun base(workspace:String):File {
       return Paths.get(workspace, "git", base + ".git").toFile()
+    }
+
+    public fun repo(C:Root):org.eclipse.jgit.lib.Repository {
+      return FileRepositoryBuilder()
+        .setBare()
+        .setGitDir(base(C.workspace))
+        .build()
+    }
+
+    public fun git(C:Root):Git {
+      return Git(repo(C))
     }
   }
 

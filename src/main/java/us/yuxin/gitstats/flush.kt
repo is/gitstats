@@ -1,21 +1,25 @@
 package us.yuxin.gitstats
 
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.ListBranchCommand
+import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.TagOpt
 import java.io.File
+import java.util.*
 
-fun updateRepo(c:GSConfig.Root, repoConfig:GSConfig.Repository) {
+fun flushRepository(c:GSConfig.Root, repoConfig:GSConfig.Repository) {
   val path = repoConfig.base(c.workspace)
   println(path)
   if (!path.exists()) {
-    initRepo(path, repoConfig)
+    initRepository(path, repoConfig)
   }
-  fetchRepo(path, repoConfig)
+  fetchRepository(path, repoConfig)
 }
 
-fun fetchRepo(gitDir:File, config:GSConfig.Repository) {
+
+fun fetchRepository(gitDir:File, config:GSConfig.Repository) {
   val repo = FileRepositoryBuilder()
     .setBare().setGitDir(gitDir)
     .build()
@@ -49,32 +53,10 @@ fun fetchRepo(gitDir:File, config:GSConfig.Repository) {
 }
 
 
-fun initRepo(gitDir:File, @Suppress("UNUSED_PARAMETER") config:GSConfig.Repository) {
+fun initRepository(gitDir:File, @Suppress("UNUSED_PARAMETER") config:GSConfig.Repository) {
   val parent = gitDir.parentFile
   if (!parent.exists()) {
     parent.mkdirs()
   }
   Git.init().setBare(true).setGitDir(gitDir).call()
 }
-
-
-data class Commit(
-  val id:String,
-  val parents:String,
-  val messages:String,
-  val lineAdded:Int,
-  val lineModified:Int,
-  val lineDeleted:Int,
-  val binaryAdded:Int,
-  val binaryModified:Int,
-  val binaryDeleted:Int,
-  val changes:List<Change>
-)
-
-
-data class Change(
-  val path:String,
-  val lineAdded:Int,
-  val lineModified:Int,
-  val lineDeleted:Int
-)
