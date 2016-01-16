@@ -37,6 +37,7 @@ fun fetchRepo(gitDir:File, config:GSConfig.Repository) {
     val res = git.fetch().setRemote(name)
       .setTagOpt(TagOpt.NO_TAGS)
       .setRefSpecs(refSpec)
+      .setRemoveDeletedRefs(true)
       .setCheckFetchedObjects(true).call()
 
 
