@@ -26,7 +26,7 @@ data class Commit(
   val lineDeleted:Int = 0,
   val binary:Int = 0,
   val effect:Int = 0,
-  var tags:String? = null,
+  var refs:String? = null,
   val changes:List<Change>? = null
 )
 

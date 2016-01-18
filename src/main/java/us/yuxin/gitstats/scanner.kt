@@ -37,8 +37,8 @@ object Scanner {
       while(list.size != 0) {
         val id = list.pop()
         val commit = commitMap[id]!!
-        if (commit.tags == null) {
-          commit.tags = tag
+        if (commit.refs == null) {
+          commit.refs = tag
           if (commit.merge != null) {
             list.push(commit.merge)
           }
