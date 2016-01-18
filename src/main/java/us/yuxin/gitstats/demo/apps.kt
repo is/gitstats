@@ -151,3 +151,37 @@ object Remote0 {
     }
   }
 }
+
+
+object Diff2{
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val repo = getDefaultRepository()
+    val revId = repo.resolve("a20a28ef8fc821dda1dbcdf2f01ecedc291009e4")
+    val walk = RevWalk(repo)
+
+
+    val rev = walk.parseCommit(revId)
+    /*
+    val rev2 = walk.parseCommit(rev.parents[0])
+
+    val git = Git(repo)
+    val objectReader = repo.newObjectReader()
+    val newTreeIter = CanonicalTreeParser()
+    newTreeIter.reset(objectReader, rev.tree)
+    val oldTreeIter = CanonicalTreeParser()
+    oldTreeIter.reset(objectReader, rev2.tree)
+
+
+    val diffs = git.diff()
+      .setNewTree(newTreeIter)
+      .setOldTree(oldTreeIter)
+      .call()
+
+    val change = analyzeDiff(repo, diffs[0])
+    println(change)
+    */
+    val commit = analyzeRev(repo, rev)
+    println(commit)
+  }
+}
