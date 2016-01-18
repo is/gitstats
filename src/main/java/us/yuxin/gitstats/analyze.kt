@@ -1,9 +1,9 @@
 package us.yuxin.gitstats
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.diff.DiffEntry
 import org.eclipse.jgit.diff.DiffFormatter
-import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.revwalk.RevWalk
@@ -12,31 +12,34 @@ import org.eclipse.jgit.treewalk.EmptyTreeIterator
 import java.io.ByteArrayOutputStream
 import java.util.*
 
-
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class Commit(
-  val id:String,
-  val time:Int,
-  val author:String,
-  val parent:String?,
-  val merge:String?,
-  val message:String,
-  val lineAdded:Int,
-  val lineModified:Int,
-  val lineDeleted:Int,
-  val binary:Int,
-  val changes:List<Change>?,
-  var tags:String? = null
+  val id:String = "",
+  val time:Int = 0,
+  val interval:Int = 0,
+  val author:String = "",
+  val parent:String? = null,
+  val merge:String? = null,
+  val message:String = "",
+  val lineAdded:Int = 0,
+  val lineModified:Int = 0,
+  val lineDeleted:Int = 0,
+  val binary:Int = 0,
+  val effect:Int = 0,
+  var tags:String? = null,
+  val changes:List<Change>? = null
 )
 
-
+// @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class Change(
-  val path:String,
-  val type:Int,
-  val section:Int,
-  val lineAdded:Int,
-  val lineModified:Int,
-  val lineDeleted:Int,
-  val binary:Boolean = false
+  val path:String = "",
+  val type:Int = -1,
+  val section:Int = 0,
+  val lineAdded:Int = 0,
+  val lineModified:Int = 0,
+  val lineDeleted:Int = 0,
+  val binary:Boolean = false,
+  val effect:Int = 0
 )
 
 
@@ -85,11 +88,11 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
   val TOKEN_DASH = '-'.toByte()
   val TOKEN_B = 'B'.toByte()
 
-  var offset = 0
+  var offset:Int = 0
   var cur:Byte;
 
   while (offset < contents.size) {
-    cur = contents.get(offset)
+    cur = contents[offset]
     offset += 1
 
     if (lineState == LINE_STATE_END) {
@@ -196,7 +199,6 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
 
 
 fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
-  val git = Git(repo)
   val revId = rev.id
   val parents = rev.parents
   val walk = RevWalk(repo)
@@ -205,17 +207,9 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
   val time_ = rev.commitTime
   val author_ = rev.authorIdent.emailAddress
 
-  val parent_ = if (parents.size  > 0) {
-    parents[0].id.name
-  } else {
-    null
-  }
-
-  val merge_ = if (parents.size == 2) {
-    parents[1].id.name
-  } else {
-    null
-  }
+  val interval_ = if (parents.size > 0) rev.commitTime - parents[0].commitTime else 0
+  val parent_ = if (parents.size > 0) parents[0].id.name else null
+  val merge_ = if (parents.size == 2) parents[1].id.name else null
 
   val objectReader = repo.newObjectReader()
 
@@ -230,16 +224,6 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
   } else {
     EmptyTreeIterator()
   }
-
-  /*
-  val diffCmd = git.diff()
-  diffCmd.setNewTree(newTreeIter)
-  if (oldTreeIter != null) {
-    diffCmd.setOldTree(oldTreeIter)
-  } else {
-    diffCmd.setOldTree(null)
-  }
-  */
 
   val differ = DiffFormatter(null)
   differ.setContext(1)
@@ -256,6 +240,7 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
   return Commit(
     id = id_,
     time = time_,
+    interval = interval_,
     author = author_,
     parent = parent_,
     merge = merge_,
@@ -264,7 +249,8 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
     lineDeleted = lineDeleted_,
     lineModified = lineModified_,
     binary = binary_,
-    changes = changes_)
+    changes = changes_,
+    effect = 0)
 }
 
 

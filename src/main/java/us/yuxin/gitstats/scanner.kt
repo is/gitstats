@@ -1,6 +1,7 @@
 package us.yuxin.gitstats
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import org.eclipse.jgit.lib.Repository
 import java.io.FileWriter
 import java.nio.file.Files
@@ -48,7 +49,7 @@ object Scanner {
       }
     }
 
-    val heads = commits.filter { !(it.id in seniorSet) }.sortedByDescending { it.time }
+    val heads = commits.filter { it.id !in seniorSet }.sortedByDescending { it.time }
 
     if (branches != null) {
       for (branch in branches) {
@@ -66,39 +67,38 @@ object Scanner {
 
 
   fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
+    val om = ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
 
-    val om = ObjectMapper()
-
-    for (repo  in C.repositories) {
-      println("+ " + repo.name)
-      val commits_ = analyzeRepository(C, repo, null)
+    for (repoInfo  in C.repositories) {
+      println("+ " + repoInfo.name)
+      val commits_ = analyzeRepository(C, repoInfo, null)
       println("  " + commits_.size + " commits")
 
-      val branches = repo.branches?: "makenv/master"
+      val branches = repoInfo.branches?: "makenv/master"
 
-      val repo_ = repo.repo(C)
+      val repo_ = repoInfo.repo(C)
       val branches_ = branches.split(",")
       markCommits(repo_, commits_, branches_)
-      // println(commits)
+
       val heads_ = branches_.filter {repo_.resolve(it) != null}
         .toMapBy({it}, {repo_.resolve(it).name})
 
-      val info = Commits(
+      val commitSet = CommitSet(
         heads = heads_,
         branches = branches_,
         commits = commits_)
 
-      val infoPath = Paths.get(C.workspace, "commits", repo.name + ".json")
-      Files.createDirectories(infoPath.parent)
-      FileWriter(infoPath.toFile()).use {
-        om.writeValue(it, info)
+      val dataPath = Paths.get(C.workspace, "commits", repoInfo.name + ".json")
+
+      Files.createDirectories(dataPath.parent)
+      FileWriter(dataPath.toFile()).use {
+        om.writeValue(it, commitSet)
       }
     }
   }
-
-
-  class Commits(
-    var heads:Map<String, String>,
-    var branches:List<String>,
-    var commits:List<Commit>)
 }
+
+data class CommitSet(
+  val heads:Map<String, String>,
+  val branches:List<String>,
+  val commits:List<Commit>)
