@@ -1,13 +1,10 @@
 package us.yuxin.gitstats
 
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.ListBranchCommand
-import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.TagOpt
 import java.io.File
-import java.util.*
 
 fun flushRepository(c:GSConfig.Root, repoConfig:GSConfig.Repository) {
   val path = repoConfig.base(c.workspace)

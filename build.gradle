@@ -44,6 +44,7 @@ dependencies {
 	compile 'org.yaml:snakeyaml:1.16'
 
 	// compile 'org.slf4j:slf4j-api:1.7.13'
+  runtime 'org.postgresql:postgresql:9.4.1207'
 	runtime 'ch.qos.logback:logback-classic:1.1.3'
 }
 
