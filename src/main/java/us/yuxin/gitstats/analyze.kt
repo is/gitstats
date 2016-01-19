@@ -179,27 +179,12 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
   }
 
 
-  // println("--")
-  // println(String(contents))
-
   val path_ = if (diff.changeType == DiffEntry.ChangeType.DELETE) {
     diff.oldPath
   } else {
     diff.newPath
   }
 
-  /*
-  println(Change(
-    path = path_,
-    type = diff.changeType.ordinal,
-    section = section,
-    lineAdded = lineAdded,
-    lineModified = lineModified,
-    lineDeleted = lineDeleted,
-    binary = binary))
-
-  System.exit(0)
-  */
 
   return Change(
     path = path_,

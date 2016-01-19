@@ -40,11 +40,11 @@ fun fetchRepository(gitDir:File, repoInfo:GSConfig.Repository) {
       .setRemoveDeletedRefs(true)
       .setCheckFetchedObjects(true).call()
 
-
     for (tru in res.trackingRefUpdates) {
-      println("  " + tru.remoteName + ": " + tru.localName
-        + ":" + tru.oldObjectId.name.substring(0, 10)
-        + " -> " + tru.newObjectId.name.substring(0, 10))
+      println("  = " + tru.remoteName.substring(11)
+        + " - " + tru.localName.substring(13)
+        + " : " + tru.oldObjectId.name.substring(0, 8)
+        + " -> " + tru.newObjectId.name.substring(0, 8))
     }
   }
 }
