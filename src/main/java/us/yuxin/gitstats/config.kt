@@ -6,11 +6,14 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Paths
 
 object GSConfig {
   @JvmStatic
   val CONFIG_FILE = File("etc/gitstats.yaml")
+  val CONFIG_FILE_2 = File("conf/gitstats.yaml")
+  val CONFIG_FILE_3 = File("gitstats.yaml")
 
   public data class Root(
     val workspace:String,
@@ -55,6 +58,14 @@ object GSConfig {
 
   @JvmStatic
   fun load():Root {
+    if (CONFIG_FILE_3.exists()) {
+      return load(CONFIG_FILE_3)
+    }
+
+    if (CONFIG_FILE_2.exists()) {
+      return load(CONFIG_FILE_2)
+    }
+
     return load(CONFIG_FILE)
   }
 }
