@@ -40,6 +40,7 @@ data class Commit(
 val createCommitsTable = """
 CREATE TABLE IF NOT EXISTS commits (
 id varchar(80) PRIMARY KEY,
+repo varchar(80),
 commitTime timestamp,
 interval integer,
 author varchar(255),
@@ -52,8 +53,7 @@ modified integer,
 deleted integer,
 binaries INTEGER,
 effect INTEGER,
-refs varchar(255));
-
+ref varchar(255));
 """
 
 
@@ -62,7 +62,7 @@ INSERT INTO commits VALUES (
   ?, ?, ?, ?,
   ?, ?, ?, ?,
   ?, ?, ?, ?,
-  ?, ?)  ON CONFLICT(id) DO UPDATE SET ref = EXCLUDED.ref
+  ?, ?, ?)  ON CONFLICT(id) DO UPDATE SET ref = EXCLUDED.ref
 """
 
 /*
@@ -96,16 +96,26 @@ PRIMARY KEY(id, path))
 val insertChanges = """
 INSERT INTO changes VALUES(
   ?, ?, ?, ?,
-  ?, ?, ?)
+  ?, ?, ?, ?) ON CONFLICT(id, path) DO NOTHING
 """
+/*
+val insertChanges = """
+INSERT INTO changes VALUES(
+  ?, ?, ?, ?,
+  ?, ?, ?, ?)
+"""
+*/
 
-fun saveCommitsToDatabase(co:Connection, cs:CommitSet):Unit {
+
+fun saveCommitSetToDatabase(co:Connection, repoName:String, cs:CommitSet):Unit {
+  val batchSize = 1
   co.autoCommit = false
 
   val stmt0 = co.createStatement()
 
   stmt0.execute(createCommitsTable)
   stmt0.execute(createChangesTable)
+  co.commit()
   stmt0.close()
 
   var cc = 0;
@@ -115,6 +125,7 @@ fun saveCommitsToDatabase(co:Connection, cs:CommitSet):Unit {
   for (c in cs.commits) {
     var i = 0
     stmt.setString(++i, c.id)
+    stmt.setString(++i, repoName)
     stmt.setTimestamp(++i,
       Timestamp.from(Instant.ofEpochSecond(c.commitTime.toLong())))
     stmt.setInt(++i, c.interval)
@@ -134,14 +145,16 @@ fun saveCommitsToDatabase(co:Connection, cs:CommitSet):Unit {
     stmt.addBatch()
 
     cc++
-    if (cc > 400) {
+    if (cc > batchSize) {
       stmt.executeBatch()
+      co.commit()
       cc = 0
     }
   }
 
-  if (cc > 400) {
+  if (cc > 0) {
     stmt.executeBatch()
+    co.commit()
     cc = 0
   }
 
@@ -168,16 +181,17 @@ fun saveCommitsToDatabase(co:Connection, cs:CommitSet):Unit {
       stmt.addBatch()
       cc++
 
-      if (cc > 400) {
+      if (cc > batchSize) {
         stmt.executeBatch()
+        co.commit()
         cc = 0
       }
     }
-    if (cc > 400) {
+    if (cc > 0) {
       stmt.executeBatch()
+      co.commit()
       cc = 0
     }
-    
   }
 }
 

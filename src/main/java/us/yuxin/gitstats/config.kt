@@ -86,7 +86,7 @@ object GSConfig {
   }
 
 
-  data class Database(
+  public data class Database(
     val driver:String = "org.postgresql.Driver",
     val url:String? = null,
     val user:String? = null,
