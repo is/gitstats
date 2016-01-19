@@ -16,7 +16,7 @@ import java.util.*
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class Commit(
   val id:String = "",
-  val time:Int = 0,
+  val commitTime:Int = 0,
   val interval:Int = 0,
   val author:String = "",
   val parent:String? = null,
@@ -238,7 +238,7 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
 
   return Commit(
     id = id_,
-    time = time_,
+    commitTime = time_,
     interval = interval_,
     author = author_,
     parent = parent_,

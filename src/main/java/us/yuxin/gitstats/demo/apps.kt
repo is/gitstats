@@ -129,7 +129,7 @@ object Config0 {
     val C = mapper.readValue<GSConfig.Root>(
       File("etc/gitstats.yaml"), GSConfig.Root::class.java)
 
-    val cf = GSConfig.load()
+    val cf = GSConfig.root()
 
     println(repos)
     println(C)

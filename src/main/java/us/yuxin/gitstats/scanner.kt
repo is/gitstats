@@ -15,7 +15,7 @@ object Scanner {
     run(args)
   }
 
-  final val C = GSConfig.load()
+  final val C = GSConfig.root()
 
   fun markCommits(repo:Repository, commits:List<Commit>, branches:List<String>?):Unit {
     val seniorSet = HashSet<String>()
@@ -49,7 +49,7 @@ object Scanner {
       }
     }
 
-    val heads = commits.filter { it.id !in seniorSet }.sortedByDescending { it.time }
+    val heads = commits.filter { it.id !in seniorSet }.sortedByDescending { it.commitTime }
 
     if (branches != null) {
       for (branch in branches) {

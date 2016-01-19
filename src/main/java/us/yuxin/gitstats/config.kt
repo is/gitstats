@@ -26,10 +26,16 @@ fun repoRemoteUrl(repo:String):String {
 
 
 object GSConfig {
-  @JvmStatic
-  val CONFIG_FILE = File("etc/gitstats.yaml")
-  val CONFIG_FILE_2 = File("conf/gitstats.yaml")
-  val CONFIG_FILE_3 = File("gitstats.yaml")
+  val CONFIG_PATHS = listOf(".", "conf", "etc")
+
+  fun configPath(confName:String):File? {
+    for (cf in CONFIG_PATHS) {
+      val fn = File(cf, confName)
+      if (fn.exists())
+        return fn
+    }
+    return null
+  }
 
   public data class Root(
     val workspace:String,
@@ -70,20 +76,24 @@ object GSConfig {
   }
 
   @JvmStatic
-  fun load(path:File):Root {
+  fun root(path:File):Root {
     return yamlMapper().readValue(path, Root::class.java)
   }
 
   @JvmStatic
-  fun load():Root {
-    if (CONFIG_FILE_3.exists()) {
-      return load(CONFIG_FILE_3)
-    }
+  fun root():Root {
+    return root(configPath("gitstats.yaml")!!)
+  }
 
-    if (CONFIG_FILE_2.exists()) {
-      return load(CONFIG_FILE_2)
-    }
 
-    return load(CONFIG_FILE)
+  data class Database(
+    val driver:String = "org.postgresql.Driver",
+    val url:String? = null,
+    val user:String? = null,
+    val password:String? = null)
+
+  fun database():Database {
+    return yamlMapper().readValue(
+      configPath("database.yaml")!!, Database::class.java)
   }
 }
