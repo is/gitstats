@@ -4,10 +4,26 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
-
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Paths
+
+
+fun repoRemoteUrl(repo:String):String {
+  if (repo.startsWith("https://")
+    || repo.startsWith("http://")
+    || repo.startsWith("ssh://"))
+    return repo
+
+  if (!repo.startsWith("."))
+    return repo
+
+  val tokens = repo.substring(1).split("__")
+  if (tokens[0] == "makenv") {
+    return "ssh://git@gitlab.makenv.com:10022/%s/%s.git".format(tokens[1], tokens[2])
+  }
+  return repo
+}
+
 
 object GSConfig {
   @JvmStatic
@@ -32,6 +48,10 @@ object GSConfig {
       return Paths.get(workspace, "git", base + ".git").toFile()
     }
 
+    public fun remote(name:String):String {
+      return repoRemoteUrl(remotes[name]!!)
+    }
+
     public fun repo(C:Root):org.eclipse.jgit.lib.Repository {
       return FileRepositoryBuilder()
         .setBare()
@@ -39,9 +59,7 @@ object GSConfig {
         .build()
     }
 
-    public fun git(C:Root):Git {
-      return Git(repo(C))
-    }
+    public fun git(C:Root):Git = Git(repo(C))
   }
 
   @JvmStatic

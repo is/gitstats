@@ -11,7 +11,6 @@ import java.util.*
 
 fun flushRepository(c:GSConfig.Root, repoConfig:GSConfig.Repository) {
   val path = repoConfig.base(c.workspace)
-  println(path)
   if (!path.exists()) {
     initRepository(path, repoConfig)
   }
@@ -19,24 +18,21 @@ fun flushRepository(c:GSConfig.Root, repoConfig:GSConfig.Repository) {
 }
 
 
-fun fetchRepository(gitDir:File, config:GSConfig.Repository) {
+fun fetchRepository(gitDir:File, repoInfo:GSConfig.Repository) {
   val repo = FileRepositoryBuilder()
     .setBare().setGitDir(gitDir)
     .build()
 
-  // update remote url
   val repoConfig = repo.config
-  for ((name, url) in config.remotes.entries) {
-    repoConfig.setString("remote", name, "url", url)
-    // println(name + ":" + url)
+  for ((name, url) in repoInfo.remotes.entries) {
+    println("  ${name} - ${repoInfo.remote(name)}")
+    repoConfig.setString("remote", name, "url", repoInfo.remote(name))
   }
   repoConfig.save()
 
   val git = Git(repo)
-  for (name in config.remotes.keys) {
-    // println("-- ${repo}:$name --")
+  for (name in repoInfo.remotes.keys) {
     val refSpec = RefSpec("+refs/heads/*:refs/remotes/$name/*")
-    // println(refSpec)
 
     val res = git.fetch().setRemote(name)
       .setTagOpt(TagOpt.NO_TAGS)
@@ -46,8 +42,9 @@ fun fetchRepository(gitDir:File, config:GSConfig.Repository) {
 
 
     for (tru in res.trackingRefUpdates) {
-      println(tru.remoteName + ": " + tru.localName
-        + ":" + tru.oldObjectId + " -> " + tru.newObjectId)
+      println("  " + tru.remoteName + ": " + tru.localName
+        + ":" + tru.oldObjectId.name.substring(0, 10)
+        + " -> " + tru.newObjectId.name.substring(0, 10))
     }
   }
 }

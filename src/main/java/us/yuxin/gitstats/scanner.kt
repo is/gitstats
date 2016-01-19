@@ -70,14 +70,28 @@ object Scanner {
     val om = ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
 
     for (repoInfo  in C.repositories) {
-      println("+ " + repoInfo.name)
+      println("  ---")
+      println("+ %s: %s".format(repoInfo.name, repoInfo.base(C.workspace)))
+      flushRepository(C, repoInfo)
       val commits_ = analyzeRepository(C, repoInfo, null)
-      println("  " + commits_.size + " commits")
 
-      val branches = repoInfo.branches?: "makenv/master"
+      val changes = commits_.map { if(it.changes == null) 0 else it.changes.size } .sum()
+      val binarys = commits_.map {
+        if(it.changes == null)
+          0
+        else it.changes.filter { it.binary }.size
+      }.sum()
+
+      val lineAdded = commits_.map { it.lineAdded }.sum()
+      val lineDeleted = commits_.map { it.lineDeleted }.sum()
+      val lineModified = commits_.map { it.lineModified }.sum()
+
+      println("  %d commits, %d changes(%d binary), +%d/-%d/%d"
+        .format(commits_.size, changes, binarys,
+          lineAdded, lineDeleted, lineModified))
 
       val repo_ = repoInfo.repo(C)
-      val branches_ = branches.split(",")
+      val branches_ = matchBranches(repo_, repoInfo.branches)
       markCommits(repo_, commits_, branches_)
 
       val heads_ = branches_.filter {repo_.resolve(it) != null}

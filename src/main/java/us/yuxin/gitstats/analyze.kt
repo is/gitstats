@@ -2,6 +2,7 @@ package us.yuxin.gitstats
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.diff.DiffEntry
 import org.eclipse.jgit.diff.DiffFormatter
 import org.eclipse.jgit.lib.Repository
@@ -43,12 +44,13 @@ data class Change(
 )
 
 
+
 fun diffText(repo:Repository, diff:DiffEntry):ByteArray {
   val os = ByteArrayOutputStream()
   val formatter = DiffFormatter(os)
 
   formatter.setRepository(repo)
-  formatter.setContext(1)
+  formatter.setContext(3)
   formatter.format(diff)
   formatter.close()
 
@@ -84,13 +86,13 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
   val TOKEN_N = '\n'.toByte()
   val TOKEN_AT = '@'.toByte()
   val TOKEN_PLUS = '+'.toByte()
-  // val TOKEN_SPACE = ' '.toByte()
   val TOKEN_DASH = '-'.toByte()
   val TOKEN_B = 'B'.toByte()
 
   var offset:Int = 0
   var cur:Byte;
 
+  // println(String(contents))
   while (offset < contents.size) {
     cur = contents[offset]
     offset += 1
@@ -110,6 +112,8 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
         break;
       }
 
+      lineState = LINE_STATE_INLINE
+
       if (state == STATE_INIT && cur == TOKEN_AT) {
         state = STATE_READY
         section += 1
@@ -121,8 +125,6 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
         lineState = LINE_STATE_END
         continue
       }
-
-      lineState = LINE_STATE_INLINE
 
       if (state == STATE_INIT) {
         continue;
@@ -186,6 +188,18 @@ fun analyzeDiff(repo:Repository, diff:DiffEntry):Change {
     diff.newPath
   }
 
+  /*
+  println(Change(
+    path = path_,
+    type = diff.changeType.ordinal,
+    section = section,
+    lineAdded = lineAdded,
+    lineModified = lineModified,
+    lineDeleted = lineDeleted,
+    binary = binary))
+
+  System.exit(0)
+  */
 
   return Change(
     path = path_,
@@ -229,7 +243,7 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
   differ.setContext(1)
   differ.setRepository(repo)
 
-  val diffs = differ.scan(newTreeIter, oldTreeIter)
+  val diffs = differ.scan(oldTreeIter, newTreeIter)
   val changes_ = diffs.map { analyzeDiff(repo, it) }
 
   val lineAdded_ = changes_.map { it.lineAdded }.sum()
@@ -252,6 +266,29 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
     changes = changes_,
     effect = 0)
 }
+
+
+fun matchBranches(repo:Repository, branchRules:String?):List<String> {
+  val rules = (branchRules?: ".*/master")
+    .split(",")
+    .map { Regex(it.trim()) }
+
+
+  val branches = Git(repo)
+    .branchList().setListMode(ListBranchCommand.ListMode.ALL)
+    .call()
+    .map{ it.name.substring(13) }
+    .filter(fun(x:String):Boolean {
+      for (rule in rules) {
+        if (rule.matches(x))
+          return true
+      }
+      return false
+    })
+
+  return branches
+}
+
 
 
 fun analyzeRepository(
