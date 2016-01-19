@@ -108,7 +108,7 @@ INSERT INTO changes VALUES(
 
 
 fun saveCommitSetToDatabase(co:Connection, repoName:String, cs:CommitSet):Unit {
-  val batchSize = 1
+  val batchSize = 400
   co.autoCommit = false
 
   val stmt0 = co.createStatement()
