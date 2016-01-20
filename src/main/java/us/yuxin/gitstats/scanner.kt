@@ -82,13 +82,7 @@ object Scanner {
         else it.changes.filter { it.binary }.size
       }.sum()
 
-      val lineAdded = commits_.map { it.lineAdded }.sum()
-      val lineDeleted = commits_.map { it.lineDeleted }.sum()
-      val lineModified = commits_.map { it.lineModified }.sum()
 
-      println("  %d commits, %d changes(%d binary), +%d/-%d/%d"
-        .format(commits_.size, changes, binarys,
-          lineAdded, lineDeleted, lineModified))
 
       val repo_ = repoInfo.repo(C)
       val branches_ = matchBranches(repo_, repoInfo.branches)
@@ -98,6 +92,8 @@ object Scanner {
         .toMapBy({it}, {repo_.resolve(it).name})
 
       val commitSet = CommitSet(
+        name = repoInfo.name!!,
+        repo = repoInfo,
         heads = heads_,
         branches = branches_,
         commits = commits_)
@@ -112,14 +108,31 @@ object Scanner {
 
       if (C.database) {
         val connection = database()
-        saveCommitSetToDatabase(connection, repoInfo.name!!, commitSet)
+        saveCommitSetToDatabase(connection, repoInfo.name, commitSet)
         connection.close()
       }
+
+      val arranger = Arrange(GSConfig.load("arrange.yaml", Arrange.Rules::class.java))
+      var commitSet2 = arranger.arrange(commitSet)
+      val dataPath2 = Paths.get(C.workspace, "arrange", repoInfo.name + ".json")
+      Files.createDirectories(dataPath2.parent)
+      FileWriter(dataPath2.toFile()).use {
+        om.writeValue(it, commitSet2)
+      }
+
+
+      val lineAdded = commits_.map { it.lineAdded }.sum()
+      val lineDeleted = commits_.map { it.lineDeleted }.sum()
+      val lineModified = commits_.map { it.lineModified }.sum()
+      val lineEffect = commitSet2.commits.map { it.effect }.sum()
+
+      println("  %d/%d commits, %d changes(%d binary), %d (+%d/-%d/%d) lines"
+        .format(
+          commitSet2.commits.filter { it.merge == null }.size,
+          commits_.size, changes, binarys,
+          lineEffect, lineAdded, lineDeleted, lineModified
+        ))
     }
   }
 }
 
-data class CommitSet(
-  val heads:Map<String, String>,
-  val branches:List<String>,
-  val commits:List<Commit>)

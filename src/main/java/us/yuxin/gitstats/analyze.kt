@@ -43,6 +43,12 @@ data class Change(
   val effect:Int = 0
 )
 
+data class CommitSet(
+  val name:String,
+  val repo:GSConfig.Repository,
+  val heads:Map<String, String>,
+  val branches:List<String>,
+  val commits:List<Commit>)
 
 
 fun diffText(repo:Repository, diff:DiffEntry):ByteArray {
