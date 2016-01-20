@@ -26,7 +26,7 @@ fun repoRemoteUrl(repo:String):String {
 
 
 object GSConfig {
-  val CONFIG_PATHS = listOf(".", "conf", "etc")
+  val CONFIG_PATHS = listOf("etc", "conf", "this", "this/etc", ".")
 
   fun configPath(confName:String):File? {
     for (cf in CONFIG_PATHS) {
