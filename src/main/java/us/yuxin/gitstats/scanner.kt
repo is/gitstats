@@ -109,9 +109,12 @@ object Scanner {
         om.writeValue(it, commitSet)
       }
 
-      val connection = database()
-      saveCommitSetToDatabase(connection, repoInfo.name!!, commitSet)
-      connection.close()
+
+      if (C.database) {
+        val connection = database()
+        saveCommitSetToDatabase(connection, repoInfo.name!!, commitSet)
+        connection.close()
+      }
     }
   }
 }

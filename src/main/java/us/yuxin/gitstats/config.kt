@@ -39,6 +39,7 @@ object GSConfig {
 
   public data class Root(
     val workspace:String,
+    val database:Boolean = false,
     val repositories:List<Repository>)
 
   public data class Repository(
