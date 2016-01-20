@@ -109,9 +109,11 @@ object Scanner {
         om.writeValue(it, commitSet)
       }
 
+      /*
       val connection = database()
       saveCommitSetToDatabase(connection, repoInfo.name!!, commitSet)
       connection.close()
+      */
     }
   }
 }

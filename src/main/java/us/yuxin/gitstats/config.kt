@@ -75,16 +75,6 @@ object GSConfig {
     return mapper
   }
 
-  @JvmStatic
-  fun root(path:File):Root {
-    return yamlMapper().readValue(path, Root::class.java)
-  }
-
-  @JvmStatic
-  fun root():Root {
-    return root(configPath("gitstats.yaml")!!)
-  }
-
 
   public data class Database(
     val driver:String = "org.postgresql.Driver",
@@ -92,8 +82,28 @@ object GSConfig {
     val user:String? = null,
     val password:String? = null)
 
-  fun database():Database {
-    return yamlMapper().readValue(
-      configPath("database.yaml")!!, Database::class.java)
+  @JvmStatic
+  fun root():Root = load("gitstats.yaml", Root::class.java)
+  @JvmStatic
+  fun database():Database = load("database.yaml", Database::class.java)
+
+
+  fun <T> load(cfname:String, clazz:Class<T>):T {
+    var c:T? = null
+    val ym = yamlMapper()
+
+    for (cp in CONFIG_PATHS) {
+      val cf = File(cp, cfname)
+      if (!cf.exists()) {
+        continue;
+      }
+
+      c = if (c == null) {
+        ym.readValue(cf, clazz)
+      } else {
+        ym.readerForUpdating(c).readValue(cf)
+      }
+    }
+    return c!!
   }
 }
