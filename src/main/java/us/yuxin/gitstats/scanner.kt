@@ -2,7 +2,9 @@ package us.yuxin.gitstats
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.dataformat.csv.CsvMapper
 import org.eclipse.jgit.lib.Repository
+import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -99,7 +101,6 @@ object Scanner {
         commits = commits_)
 
       val dataPath = Paths.get(C.workspace, "commits", repoInfo.name + ".json")
-
       Files.createDirectories(dataPath.parent)
       FileWriter(dataPath.toFile()).use {
         om.writeValue(it, commitSet)
@@ -126,6 +127,9 @@ object Scanner {
         connection.close()
       }
 
+      val dataPath3 = Paths.get(C.workspace, "arrange", repoInfo.name + ".csv")
+      saveCommitSetToCsv(dataPath3.toFile(), commitSet2)
+
       val lineAdded = commits_.map { it.lineAdded }.sum()
       val lineDeleted = commits_.map { it.lineDeleted }.sum()
       val lineModified = commits_.map { it.lineModified }.sum()
@@ -138,6 +142,13 @@ object Scanner {
           lineEffect, lineAdded, lineDeleted, lineModified
         ))
     }
+  }
+
+  fun saveCommitSetToCsv(path:File, cs:CommitSet) {
+    val changes = changeToCsvs(cs.commits)
+    val cm = CsvMapper()
+    val schema = cm.schemaFor(ChangeCsv::class.java).withHeader()
+    cm.writer(schema).writeValues(path).writeAll(changes)
   }
 }
 

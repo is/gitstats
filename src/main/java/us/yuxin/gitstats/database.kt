@@ -15,7 +15,7 @@ fun database(schema:String? = null):Connection {
   prop["user"] = conf.user
   prop["password"] = conf.password
   if (schema != null) {
-    prop["currentSchema"] = schema + ""","${'$'}user",public"""
+    prop["currentSchema"] = schema + ""","$\user",public"""
   }
   return DriverManager.getConnection(conf.url, prop)
 }

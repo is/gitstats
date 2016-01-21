@@ -1,6 +1,8 @@
+@file:JvmName("Analyze")
 package us.yuxin.gitstats
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.diff.DiffEntry
@@ -11,6 +13,9 @@ import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
 import org.eclipse.jgit.treewalk.EmptyTreeIterator
 import java.io.ByteArrayOutputStream
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -43,12 +48,84 @@ data class Change(
   val effect:Int = 0
 )
 
+
+@JsonPropertyOrder(
+  "ts", "id", "date", "time", "refs",
+  "author", "ce",
+  "path", "section", "effect",
+  "added", "modified", "deleted", "binary",
+  "month", "year", "day", "hour")
+data class ChangeCsv(
+  val ts:Int,
+  val id:String,
+  val date:String,
+  val time:String,
+  val refs:String,
+
+  val author:String,
+  val ce:Int,
+
+  val path:String,
+  val section:Int,
+  val effect:Int,
+  val added:Int,
+  val modified:Int,
+  val deleted:Int,
+  val binary:Int,
+
+  val month:Int,
+  val year:Int,
+  val day:Int,
+  val hour:Int)
+
 data class CommitSet(
   val name:String,
   val repo:GSConfig.Repository,
   val heads:Map<String, String>,
   val branches:List<String>,
   val commits:List<Commit>)
+
+val csvDateFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd")
+val csvTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+fun localDatetime(timestamp:Long) =
+  LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), TimeZone
+  .getDefault().toZoneId());
+fun localDatetime(timestamp:Int) = localDatetime(timestamp.toLong())
+
+fun changeToCsv(c:Commit, ch:Change):ChangeCsv {
+  val time = localDatetime(c.commitTime)
+
+  return ChangeCsv(
+    ts = c.commitTime,
+    id = c.id,
+    date = csvDateFormatter.format(time),
+    time = csvTimeFormatter.format(time),
+    refs = c.refs?: "-",
+    author = c.author,
+    ce = c.effect,
+
+    path = ch.path,
+    section = ch.section,
+    added = ch.lineAdded,
+    modified = ch.lineModified,
+    deleted = ch.lineDeleted,
+    effect = ch.effect,
+    binary = if(ch.binary) 1 else 0,
+
+    year = time.year,
+    month = time.monthValue,
+    day = time.dayOfMonth,
+    hour = time.hour)
+}
+
+
+fun changeToCsvs(cs:List<Commit>):List<ChangeCsv> {
+  val chs = LinkedList<ChangeCsv>()
+  for (c in cs) {
+    chs.addAll(c.changes!!.map {changeToCsv(c, it)})
+  }
+  return chs
+}
 
 
 fun diffText(repo:Repository, diff:DiffEntry):ByteArray {

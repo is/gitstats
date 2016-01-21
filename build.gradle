@@ -41,6 +41,7 @@ dependencies {
 	compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
 	compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jackson_version"
 	compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:$jackson_version"
+	compile "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$jackson_version"
 	compile 'org.yaml:snakeyaml:1.16'
 
 	// compile 'org.slf4j:slf4j-api:1.7.13'
