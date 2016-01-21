@@ -41,6 +41,7 @@ object GSConfig {
     val workspace:String,
     val database:Boolean = false,
     val useCommitCache:Boolean = true,
+    val threads:Int = 1,
     val repositories:List<Repository>)
 
   public data class Repository(

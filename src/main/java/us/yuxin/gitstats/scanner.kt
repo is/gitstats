@@ -9,6 +9,7 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import java.util.concurrent.Executors
 
 object Scanner {
   @JvmStatic
@@ -160,10 +161,20 @@ object Scanner {
   }
 
   fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
-
-    for (repoInfo  in C.repositories) {
-      repository(repoInfo)
+    if (C.threads <= 1) {
+      for (ri  in C.repositories) {
+        repository(ri)
+      }
     }
+
+
+    val executor = Executors.newFixedThreadPool(C.threads)
+    for (ri in C.repositories) {
+      executor.submit {
+        repository(ri)
+      }
+    }
+    executor.shutdown()
   }
 
   fun saveCommitSetToCsv(path:File, cs:CommitSet) {
