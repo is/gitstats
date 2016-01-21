@@ -185,3 +185,15 @@ object Diff2{
     println(commit)
   }
 }
+
+
+object TestPathRule {
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val arrange = Arrange(null)
+    val rule = arrange.buildPathRule("1.0002", "-liyoushan@.*")
+    println(rule)
+    val path = "liyoushan@192.168.1.179/bower_components/jquery-ui/ui/position.js"
+    println((rule.data as Regex).matches(path))
+  }
+}
