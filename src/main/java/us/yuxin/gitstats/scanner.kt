@@ -67,80 +67,102 @@ object Scanner {
     }
   }
 
-
-  fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
+  fun repository(repoInfo:GSConfig.Repository) {
     val om = ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
 
-    for (repoInfo  in C.repositories) {
-      println("  ---")
-      println("+ %s: %s".format(repoInfo.name, repoInfo.base(C.workspace)))
-      flushRepository(C, repoInfo)
-      val commits_ = analyzeRepository(C, repoInfo, null)
+    println("  ---")
+    println("+ %s: %s".format(repoInfo.name, repoInfo.base(C.workspace)))
+    flushRepository(C, repoInfo)
 
-      val changes = commits_.map { if(it.changes == null) 0 else it.changes.size } .sum()
-      val binarys = commits_.map {
-        if(it.changes == null)
-          0
-        else it.changes.filter { it.binary }.size
-      }.sum()
-
-
-
-      val repo_ = repoInfo.repo(C)
-      val branches_ = matchBranches(repo_, repoInfo.branches)
-      markCommits(repo_, commits_, branches_)
-
-      val heads_ = branches_.filter {repo_.resolve(it) != null}
-        .toMapBy({it}, {repo_.resolve(it).name})
-
-      val commitSet = CommitSet(
-        name = repoInfo.name!!,
-        repo = repoInfo,
-        heads = heads_,
-        branches = branches_,
-        commits = commits_)
-
+    val cache = if (C.useCommitCache) {
       val dataPath = Paths.get(C.workspace, "commits", repoInfo.name + ".json")
-      Files.createDirectories(dataPath.parent)
-      FileWriter(dataPath.toFile()).use {
-        om.writeValue(it, commitSet)
+      if (!Files.isReadable(dataPath)) {
+        null
+      } else {
+        val cs = om.readValue(dataPath.toFile(), CommitSet::class.java)
+        val mp = HashMap<String, Commit>()
+
+        for (c in cs.commits) {
+          mp[c.id] = c
+        }
+        mp
       }
+    } else {
+      null
+    }
+    val commits_ = analyzeRepository(C, repoInfo, cache)
+
+    val changes = commits_.map { if(it.changes == null) 0 else it.changes.size } .sum()
+    val binarys = commits_.map {
+      if(it.changes == null)
+        0
+      else it.changes.filter { it.binary }.size
+    }.sum()
 
 
-      if (C.database) {
-        val connection = database()
-        saveCommitSetToDatabase(connection, commitSet)
-        connection.close()
-      }
 
-      val arranger = Arrange(GSConfig.load("arrange.yaml", Arrange.Rules::class.java))
-      var commitSet2 = arranger.arrange(commitSet)
-      val dataPath2 = Paths.get(C.workspace, "arrange", repoInfo.name + ".json")
-      Files.createDirectories(dataPath2.parent)
-      FileWriter(dataPath2.toFile()).use {
-        om.writeValue(it, commitSet2)
-      }
+    val repo_ = repoInfo.repo(C)
+    val branches_ = matchBranches(repo_, repoInfo.branches)
+    markCommits(repo_, commits_, branches_)
 
-      if (C.database) {
-        val connection = database("arrange")
-        saveCommitSetToDatabase(connection, commitSet2)
-        connection.close()
-      }
+    val heads_ = branches_.filter {repo_.resolve(it) != null}
+      .toMapBy({it}, {repo_.resolve(it).name})
 
-      val dataPath3 = Paths.get(C.workspace, "arrange", repoInfo.name + ".csv")
-      saveCommitSetToCsv(dataPath3.toFile(), commitSet2)
+    val commitSet = CommitSet(
+      name = repoInfo.name!!,
+      repo = repoInfo,
+      heads = heads_,
+      branches = branches_,
+      commits = commits_)
 
-      val lineAdded = commits_.map { it.lineAdded }.sum()
-      val lineDeleted = commits_.map { it.lineDeleted }.sum()
-      val lineModified = commits_.map { it.lineModified }.sum()
-      val lineEffect = commitSet2.commits.map { it.effect }.sum()
+    val dataPath = Paths.get(C.workspace, "commits", repoInfo.name + ".json")
+    Files.createDirectories(dataPath.parent)
+    FileWriter(dataPath.toFile()).use {
+      om.writeValue(it, commitSet)
+    }
 
-      println("  %d/%d commits, %d changes(%d binary), %d (+%d/-%d/%d) lines"
-        .format(
-          commitSet2.commits.filter { it.merge == null }.size,
-          commits_.size, changes, binarys,
-          lineEffect, lineAdded, lineDeleted, lineModified
-        ))
+
+    if (C.database) {
+      val connection = database()
+      saveCommitSetToDatabase(connection, commitSet)
+      connection.close()
+    }
+
+    val arranger = Arrange(GSConfig.load("arrange.yaml", Arrange.Rules::class.java))
+    var commitSet2 = arranger.arrange(commitSet)
+    val dataPath2 = Paths.get(C.workspace, "arrange", repoInfo.name + ".json")
+    Files.createDirectories(dataPath2.parent)
+    FileWriter(dataPath2.toFile()).use {
+      om.writeValue(it, commitSet2)
+    }
+
+    if (C.database) {
+      val connection = database("arrange")
+      saveCommitSetToDatabase(connection, commitSet2)
+      connection.close()
+    }
+
+    val dataPath3 = Paths.get(C.workspace, "arrange", repoInfo.name + ".csv")
+    saveCommitSetToCsv(dataPath3.toFile(), commitSet2)
+
+    val lineAdded = commits_.map { it.lineAdded }.sum()
+    val lineDeleted = commits_.map { it.lineDeleted }.sum()
+    val lineModified = commits_.map { it.lineModified }.sum()
+    val lineEffect = commitSet2.commits.map { it.effect }.sum()
+
+    println("  %d/%d commits, %d changes(%d binary), %d (+%d/-%d/%d) lines"
+      .format(
+        commitSet2.commits.filter { it.merge == null }.size,
+        commits_.size, changes, binarys,
+        lineEffect, lineAdded, lineDeleted, lineModified
+      ))
+
+  }
+
+  fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
+
+    for (repoInfo  in C.repositories) {
+      repository(repoInfo)
     }
   }
 
