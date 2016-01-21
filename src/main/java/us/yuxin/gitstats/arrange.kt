@@ -1,6 +1,6 @@
 package us.yuxin.gitstats
 
-class Arrange(rules:Rules) {
+class Arrange(rules:Rules?) {
   data class Rules(
     val path: Map<String, String>?,
     val author: Map<String, String>?,
@@ -22,7 +22,7 @@ class Arrange(rules:Rules) {
   var rules:Rules? = null
   var paths:List<PathRule>? = null
 
-  fun setRules(rules:Rules):Arrange {
+  fun setRules(rules:Rules?):Arrange {
     this.rules = rules;
     buildPathRules()
     return this
@@ -86,7 +86,7 @@ class Arrange(rules:Rules) {
   }
 
   fun mapAuthor(name:String):String {
-    return if (rules == null) {
+    return if (rules?.author == null) {
       name
     } else {
       rules!!.author!![name]?:name

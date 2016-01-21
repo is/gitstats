@@ -7,14 +7,16 @@ import java.time.Instant
 import java.util.*
 
 
-fun database():Connection {
+fun database(schema:String? = null):Connection {
   val conf = GSConfig.database()
   Class.forName(conf.driver)
 
   val prop = Properties()
   prop["user"] = conf.user
   prop["password"] = conf.password
-
+  if (schema != null) {
+    prop["currentSchema"] = schema + ""","${'$'}user",public"""
+  }
   return DriverManager.getConnection(conf.url, prop)
 }
 
@@ -62,7 +64,8 @@ INSERT INTO commits VALUES (
   ?, ?, ?, ?,
   ?, ?, ?, ?,
   ?, ?, ?, ?,
-  ?, ?, ?)  ON CONFLICT(id) DO UPDATE SET ref = EXCLUDED.ref
+  ?, ?, ?)  ON CONFLICT(id) DO UPDATE SET ref = EXCLUDED.ref, author = EXCLUDED.author, effect = EXCLUDED.effect
+
 """
 
 /*
@@ -107,8 +110,9 @@ INSERT INTO changes VALUES(
 */
 
 
-fun saveCommitSetToDatabase(co:Connection, repoName:String, cs:CommitSet):Unit {
-  val batchSize = 400
+fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
+  val batchSize = 1000
+  val repoName = cs.name
   co.autoCommit = false
 
   val stmt0 = co.createStatement()

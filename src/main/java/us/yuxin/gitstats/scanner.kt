@@ -108,7 +108,7 @@ object Scanner {
 
       if (C.database) {
         val connection = database()
-        saveCommitSetToDatabase(connection, repoInfo.name, commitSet)
+        saveCommitSetToDatabase(connection, commitSet)
         connection.close()
       }
 
@@ -120,6 +120,11 @@ object Scanner {
         om.writeValue(it, commitSet2)
       }
 
+      if (C.database) {
+        val connection = database("arrange")
+        saveCommitSetToDatabase(connection, commitSet2)
+        connection.close()
+      }
 
       val lineAdded = commits_.map { it.lineAdded }.sum()
       val lineDeleted = commits_.map { it.lineDeleted }.sum()
