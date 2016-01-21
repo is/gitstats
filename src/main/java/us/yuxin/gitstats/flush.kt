@@ -6,29 +6,29 @@ import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.TagOpt
 import java.io.File
 
-fun flushRepository(c:GSConfig.Root, repoConfig:GSConfig.Repository) {
-  val path = repoConfig.base(c.workspace)
+fun flushRepository(ri:GSConfig.Repository) {
+  val path = ri.gitDir
   if (!path.exists()) {
-    initRepository(path, repoConfig)
+    initRepository(ri)
   }
-  fetchRepository(path, repoConfig)
+  fetchRepository(ri)
 }
 
 
-fun fetchRepository(gitDir:File, repoInfo:GSConfig.Repository) {
+fun fetchRepository(ri:GSConfig.Repository) {
   val repo = FileRepositoryBuilder()
-    .setBare().setGitDir(gitDir)
+    .setBare().setGitDir(ri.gitDir)
     .build()
 
   val repoConfig = repo.config
-  for ((name, url) in repoInfo.remotes.entries) {
-    println("  ${name} - ${repoInfo.remote(name)}")
-    repoConfig.setString("remote", name, "url", repoInfo.remote(name))
+  for ((name, url) in ri.remotes.entries) {
+    println("  ${name} - ${ri.remote(name)}")
+    repoConfig.setString("remote", name, "url", ri.remote(name))
   }
   repoConfig.save()
 
   val git = Git(repo)
-  for (name in repoInfo.remotes.keys) {
+  for (name in ri.remotes.keys) {
     val refSpec = RefSpec("+refs/heads/*:refs/remotes/$name/*")
 
     val res = git.fetch().setRemote(name)
@@ -47,10 +47,10 @@ fun fetchRepository(gitDir:File, repoInfo:GSConfig.Repository) {
 }
 
 
-fun initRepository(gitDir:File, @Suppress("UNUSED_PARAMETER") config:GSConfig.Repository) {
-  val parent = gitDir.parentFile
+fun initRepository(ri:GSConfig.Repository) {
+  val parent = ri.gitDir.parentFile
   if (!parent.exists()) {
     parent.mkdirs()
   }
-  Git.init().setBare(true).setGitDir(gitDir).call()
+  Git.init().setBare(true).setGitDir(ri.gitDir).call()
 }

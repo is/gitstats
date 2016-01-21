@@ -3,6 +3,7 @@ package us.yuxin.gitstats
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.csv.CsvMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.eclipse.jgit.lib.Repository
 import java.io.File
 import java.io.FileWriter
@@ -68,21 +69,25 @@ object Scanner {
     }
   }
 
-  fun repository(repoInfo:GSConfig.Repository) {
-    val om = ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+  fun repository(ri:GSConfig.Repository) {
+    val om = ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).registerKotlinModule()
 
     println("  ---")
-    println("+ %s: %s".format(repoInfo.name, repoInfo.base(C.workspace)))
-    flushRepository(C, repoInfo)
+    println("+ %s: %s".format(ri.name, ri.gitDir))
+    flushRepository(ri)
 
     val cache = if (C.useCommitCache) {
-      val dataPath = Paths.get(C.workspace, "commits", repoInfo.name + ".json")
+      val dataPath = Paths.get(
+        C.workspace, "commits",
+        ri.name + ".json")
       if (!Files.isReadable(dataPath)) {
         null
       } else {
-        val cs = om.readValue(dataPath.toFile(), CommitSet::class.java)
-        val mp = HashMap<String, Commit>()
+        val cs = om.readValue(
+          dataPath.toFile(),
+          CommitSet::class.java)
 
+        val mp = HashMap<String, Commit>()
         for (c in cs.commits) {
           mp[c.id] = c
         }
@@ -91,7 +96,7 @@ object Scanner {
     } else {
       null
     }
-    val commits_ = analyzeRepository(C, repoInfo, cache)
+    val commits_ = analyzeRepository(C, ri, cache)
 
     val changes = commits_.map { if(it.changes == null) 0 else it.changes.size } .sum()
     val binarys = commits_.map {
@@ -102,21 +107,21 @@ object Scanner {
 
 
 
-    val repo_ = repoInfo.repo(C)
-    val branches_ = matchBranches(repo_, repoInfo.branches)
+    val repo_ = ri.repo()
+    val branches_ = matchBranches(repo_, ri.branches)
     markCommits(repo_, commits_, branches_)
 
     val heads_ = branches_.filter {repo_.resolve(it) != null}
       .toMapBy({it}, {repo_.resolve(it).name})
 
     val commitSet = CommitSet(
-      name = repoInfo.name!!,
-      repo = repoInfo,
+      name = ri.name!!,
+      repo = ri,
       heads = heads_,
       branches = branches_,
       commits = commits_)
 
-    val dataPath = Paths.get(C.workspace, "commits", repoInfo.name + ".json")
+    val dataPath = Paths.get(C.workspace, "commits", ri.name + ".json")
     Files.createDirectories(dataPath.parent)
     FileWriter(dataPath.toFile()).use {
       om.writeValue(it, commitSet)
@@ -131,7 +136,7 @@ object Scanner {
 
     val arranger = Arrange(GSConfig.load("arrange.yaml", Arrange.Rules::class.java))
     var commitSet2 = arranger.arrange(commitSet)
-    val dataPath2 = Paths.get(C.workspace, "arrange", repoInfo.name + ".json")
+    val dataPath2 = Paths.get(C.workspace, "arrange", ri.name + ".json")
     Files.createDirectories(dataPath2.parent)
     FileWriter(dataPath2.toFile()).use {
       om.writeValue(it, commitSet2)
@@ -143,7 +148,7 @@ object Scanner {
       connection.close()
     }
 
-    val dataPath3 = Paths.get(C.workspace, "arrange", repoInfo.name + ".csv")
+    val dataPath3 = Paths.get(C.workspace, "arrange", ri.name + ".csv")
     saveCommitSetToCsv(dataPath3.toFile(), commitSet2)
 
     val lineAdded = commits_.map { it.lineAdded }.sum()
@@ -161,12 +166,16 @@ object Scanner {
   }
 
   fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
+    C.repositories.forEach { it ->
+      it.root = C
+    }
+
     if (C.threads <= 1) {
       for (ri  in C.repositories) {
         repository(ri)
       }
+      return
     }
-
 
     val executor = Executors.newFixedThreadPool(C.threads)
     for (ri in C.repositories) {

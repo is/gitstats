@@ -85,6 +85,25 @@ data class CommitSet(
   val branches:List<String>,
   val commits:List<Commit>)
 
+
+data class CommitSetNullable(
+  val name:String? = null,
+  val repo:GSConfig.Repository? = null,
+  val heads:Map<String, String>? = null,
+  val branches:List<String>? = null,
+  val commits:List<Commit>? = null) {
+  fun toCommitSet():CommitSet {
+    return CommitSet(
+      name = this.name!!,
+      repo = this.repo!!,
+      heads = this.heads!!,
+      branches = this.branches!!,
+      commits = this.commits!!)
+  }
+}
+
+
+
 val csvDateFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd")
 val csvTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 fun localDatetime(timestamp:Long) =
@@ -360,12 +379,12 @@ fun matchBranches(repo:Repository, branchRules:String?):List<String> {
 
 
 fun analyzeRepository(
-  c:GSConfig.Root, config:GSConfig.Repository,
+  c:GSConfig.Root, ri:GSConfig.Repository,
   commitCache:MutableMap<String, Commit>? = null):List<Commit> {
 
   val cache = commitCache ?: HashMap<String, Commit>()
 
-  val repo = config.repo(c)
+  val repo = ri.repo()
   val git = Git(repo)
   val logs = git.log().all().call()
   val commits = logs.map {

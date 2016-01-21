@@ -126,7 +126,7 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
 
   var stmt = co.prepareStatement(insertCommits)
 
-  for (c in cs.commits) {
+  for (c in cs.commits!!) {
     var i = 0
     stmt.setString(++i, c.id)
     stmt.setString(++i, repoName)

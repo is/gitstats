@@ -1,5 +1,6 @@
 package us.yuxin.gitstats
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.eclipse.jgit.api.Git
@@ -50,25 +51,26 @@ object GSConfig {
     val remotes:Map<String, String>,
     val branches:String? = null) {
 
-    public val base:String
-      get() = path?: name!!
+    @JsonIgnore
+    var root:Root? = null;
 
-    public fun base(workspace:String):File {
-      return Paths.get(workspace, "git", base + ".git").toFile()
-    }
+    val base:String
+    @JsonIgnore get() = path?: name!!
 
-    public fun remote(name:String):String {
-      return repoRemoteUrl(remotes[name]!!)
-    }
+    val gitDir:File
+    @JsonIgnore get() = Paths.get(root!!.workspace, "git", base + ".git").toFile()
 
-    public fun repo(C:Root):org.eclipse.jgit.lib.Repository {
-      return FileRepositoryBuilder()
+    public fun remote(name:String) =
+      repoRemoteUrl(remotes[name]!!)
+
+
+    public fun repo() =
+      FileRepositoryBuilder()
         .setBare()
-        .setGitDir(base(C.workspace))
+        .setGitDir(gitDir)
         .build()
-    }
 
-    public fun git(C:Root):Git = Git(repo(C))
+    public fun git():Git = Git(repo())
   }
 
   @JvmStatic
