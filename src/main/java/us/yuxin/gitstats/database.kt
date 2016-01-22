@@ -15,29 +15,11 @@ fun database(schema:String? = null):Connection {
   prop["user"] = conf.user
   prop["password"] = conf.password
   if (schema != null) {
-    prop["currentSchema"] = schema + ""","$\user",public"""
+    prop["currentSchema"] = "$schema,\"$\\user\",public"
   }
   return DriverManager.getConnection(conf.url, prop)
 }
 
-/*
-data class Commit(
-  val id:String = "",
-  val time:Int = 0,
-  val interval:Int = 0,
-  val author:String = "",
-  val parent:String? = null,
-  val merge:String? = null,
-  val message:String = "",
-  val lineAdded:Int = 0,
-  val lineModified:Int = 0,
-  val lineDeleted:Int = 0,
-  val binary:Int = 0,
-  val effect:Int = 0,
-  var refs:String? = null,
-  val changes:List<Change>? = null
-)
-*/
 
 val createCommitsTable = """
 CREATE TABLE IF NOT EXISTS commits (
@@ -126,7 +108,7 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
 
   var stmt = co.prepareStatement(insertCommits)
 
-  for (c in cs.commits!!) {
+  for (c in cs.commits) {
     var i = 0
     stmt.setString(++i, c.id)
     stmt.setString(++i, repoName)

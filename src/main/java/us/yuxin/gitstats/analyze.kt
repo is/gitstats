@@ -379,7 +379,7 @@ fun matchBranches(repo:Repository, branchRules:String?):List<String> {
 
 
 fun analyzeRepository(
-  c:GSConfig.Root, ri:GSConfig.Repository,
+  ri:GSConfig.Repository,
   commitCache:MutableMap<String, Commit>? = null):List<Commit> {
 
   val cache = commitCache ?: HashMap<String, Commit>()

@@ -96,7 +96,7 @@ object Scanner {
     } else {
       null
     }
-    val commits_ = analyzeRepository(C, ri, cache)
+    val commits_ = analyzeRepository(ri, cache)
 
     val changes = commits_.map { if(it.changes == null) 0 else it.changes.size } .sum()
     val binarys = commits_.map {
@@ -193,4 +193,3 @@ object Scanner {
     cm.writer(schema).writeValues(path).writeAll(changes)
   }
 }
-

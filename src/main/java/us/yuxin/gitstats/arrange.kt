@@ -120,8 +120,8 @@ class Arrange(rules:Rules?) {
 
   public fun arrange(cs:CommitSet):CommitSet {
     return cs.copy(
-      commits = cs.commits!!.map {
-        arrangeCommit(cs.repo!!, it)
+      commits = cs.commits.map {
+        arrangeCommit(cs.repo, it)
       })
   }
 }

@@ -7,6 +7,7 @@ import org.eclipse.jgit.diff.DiffFormatter
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.treewalk.CanonicalTreeParser
+import org.stringtemplate.v4.ST
 import org.yaml.snakeyaml.Yaml
 import us.yuxin.gitstats.*
 import java.io.File
@@ -195,5 +196,25 @@ object TestPathRule {
     println(rule)
     val path = "liyoushan@192.168.1.179/bower_components/jquery-ui/ui/position.js"
     println((rule.data as Regex).matches(path))
+  }
+}
+
+object StringTemplate0 {
+  @JvmStatic
+  fun main(args:Array<String>) {
+    val params = listOf("www.google.com", "chrome")
+    val st = ST("https://<p0>/<p1>")
+
+
+    params.forEachIndexed { i, s ->
+      st.add("p" + i , s)
+    }
+    println(st.render())
+
+    val params2 = listOf("www.things.com", "redo", "fast")
+    params2.forEachIndexed {i, s ->
+      st.add("p" + i, s)
+    }
+    println(st.render())
   }
 }
