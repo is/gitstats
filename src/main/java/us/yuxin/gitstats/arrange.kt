@@ -12,8 +12,14 @@ class Arrange(rules:Rules?) {
     val type:Int,
     val project:String,
     val rule:String,
-    val data:Any?) {
-  }
+    val data:Any?)
+
+  val ACTION_SKIP = '!'
+  val ACTION_INCLUDE = '+'
+  // val ACTION_EXCLUDE = '-'
+
+  val TYPE_NONE:Int = 0
+  val TYPE_PATTERN:Int = 1
 
   init {
     setRules(rules)
@@ -28,12 +34,7 @@ class Arrange(rules:Rules?) {
     return this
   }
 
-  val ACTION_SKIP = '!'
-  val ACTION_INCLUDE = '+'
-  // val ACTION_EXCLUDE = '-'
 
-  val TYPE_NONE = 0
-  val TYPE_PATTERN = 1
 
   fun buildPathRule(id:String, line:String):PathRule {
     if (line[0] == ACTION_SKIP) {
@@ -78,7 +79,7 @@ class Arrange(rules:Rules?) {
       }
 
       if (pathRule.type == TYPE_PATTERN &&
-        (pathRule.data as Regex?)!!.matches(path)) {
+        (pathRule.data as Regex).matches(path)) {
         return if(pathRule.action == ACTION_INCLUDE) true else false
       }
     }
