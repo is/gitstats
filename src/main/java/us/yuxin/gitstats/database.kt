@@ -32,6 +32,7 @@ parent varchar(80),
 merge varchar(80),
 tagline varchar(255),
 message text,
+changed integer,
 added integer,
 modified integer,
 deleted integer,
@@ -47,7 +48,8 @@ INSERT INTO commits VALUES (
   ?, ?, ?, ?,
   ?, ?, ?, ?,
   ?, ?, ?, ?,
-  ?, ?, ?, ?)  ON CONFLICT(id)
+  ?, ?, ?, ?,
+  ?)  ON CONFLICT(id)
   DO UPDATE SET
   ref = EXCLUDED.ref, author = EXCLUDED.author,
   effect = EXCLUDED.effect, reach = EXCLUDED.reach
@@ -111,6 +113,7 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
     stmt.setString(++i, c.merge)
     stmt.setString(++i, c.message.split("\\n")[0].trim())
     stmt.setString(++i, c.message)
+    stmt.setInt(++i, c.changes?.size?:0)
     stmt.setInt(++i, c.lineAdded)
     stmt.setInt(++i, c.lineModified)
 

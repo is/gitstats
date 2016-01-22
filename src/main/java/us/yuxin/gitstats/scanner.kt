@@ -159,13 +159,12 @@ object Scanner {
     val lineModified = commits_.map { it.lineModified }.sum()
     val lineEffect = commitSet2.commits.map { it.effect }.sum()
 
-    println("  %d/%d commits, %d changes(%d binary), %d (+%d/-%d/%d) lines"
+    println("  %d/%d commits, %d changes(%d binary), %d (+%d/-%d/%d) [%s]"
       .format(
         commitSet2.commits.filter { it.merge == null }.size,
         commits_.size, changes, binarys,
-        lineEffect, lineAdded, lineDeleted, lineModified
-      ))
-
+        lineEffect, lineAdded, lineDeleted, lineModified,
+        ri.name))
   }
 
   fun run(@Suppress("UNUSED_PARAMETER") args:Array<String>) {
