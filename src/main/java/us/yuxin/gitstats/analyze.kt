@@ -32,6 +32,7 @@ data class Commit(
   val lineDeleted:Int = 0,
   val binary:Int = 0,
   val effect:Int = 0,
+  var reach:Int = 0,
   var refs:String? = null,
   val changes:List<Change>? = null
 )
@@ -351,7 +352,8 @@ fun analyzeRev(repo:Repository, rev:RevCommit):Commit {
     lineModified = lineModified_,
     binary = binary_,
     changes = changes_,
-    effect = 0)
+    effect = 0,
+    reach = 0)
 }
 
 

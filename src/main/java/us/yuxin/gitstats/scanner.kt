@@ -36,6 +36,8 @@ object Scanner {
 
     fun mark(start:String, tag:String) {
       val list = LinkedList<String>()
+      val reach = if (tag.startsWith(".")) 0 else 1
+
       list.push(start)
 
       while(list.size != 0) {
@@ -43,6 +45,7 @@ object Scanner {
         val commit = commitMap[id]!!
         if (commit.refs == null) {
           commit.refs = tag
+          commit.reach = reach
           if (commit.merge != null) {
             list.push(commit.merge)
           }

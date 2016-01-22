@@ -37,6 +37,7 @@ modified integer,
 deleted integer,
 binaries INTEGER,
 effect INTEGER,
+reach INTEGER,
 ref varchar(255));
 """
 
@@ -46,23 +47,11 @@ INSERT INTO commits VALUES (
   ?, ?, ?, ?,
   ?, ?, ?, ?,
   ?, ?, ?, ?,
-  ?, ?, ?)  ON CONFLICT(id) DO UPDATE SET ref = EXCLUDED.ref, author = EXCLUDED.author, effect = EXCLUDED.effect
-
+  ?, ?, ?, ?)  ON CONFLICT(id)
+  DO UPDATE SET
+  ref = EXCLUDED.ref, author = EXCLUDED.author,
+  effect = EXCLUDED.effect, reach = EXCLUDED.reach
 """
-
-/*
-data class Change(
-  val path:String = "",
-  val type:Int = -1,
-  val section:Int = 0,
-  val lineAdded:Int = 0,
-  val lineModified:Int = 0,
-  val lineDeleted:Int = 0,
-  val binary:Boolean = false,
-  val effect:Int = 0
-)
-*/
-
 
 val createChangesTable = """
 CREATE TABLE IF NOT EXISTS changes(
@@ -81,7 +70,8 @@ PRIMARY KEY(id, path))
 val insertChanges = """
 INSERT INTO changes VALUES(
   ?, ?, ?, ?,
-  ?, ?, ?, ?) ON CONFLICT(id, path) DO NOTHING
+  ?, ?, ?, ?) ON CONFLICT(id, path)
+  DO UPDATE SET effect = EXCLUDED.effect
 """
 /*
 val insertChanges = """
@@ -127,6 +117,7 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
     stmt.setInt(++i, c.lineDeleted)
     stmt.setInt(++i, c.binary)
     stmt.setInt(++i, c.effect)
+    stmt.setInt(++i, c.reach)
     stmt.setString(++i, c.refs)
     stmt.addBatch()
 
