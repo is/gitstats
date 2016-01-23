@@ -32,7 +32,7 @@ author VARCHAR(255),
 parent VARCHAR(80),
 merge VARCHAR(80),
 tagline VARCHAR(255),
-message text,
+message TEXT,
 changed INTEGER,
 added INTEGER,
 modified INTEGER,
@@ -136,7 +136,7 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
     stmt1.setString(++i, c.parent)
 
     stmt1.setString(++i, c.merge)
-    stmt1.setString(++i, c.message.split("\\n")[0].trim())
+    stmt1.setString(++i, c.message.split("\n")[0].trim())
     stmt1.setString(++i, c.message)
     stmt1.setInt(++i, c.changes?.size?:0)
     stmt1.setInt(++i, c.lineAdded)
