@@ -23,23 +23,24 @@ fun database(schema:String? = null):Connection {
 
 val createCommitsTable = """
 CREATE TABLE IF NOT EXISTS commits (
-id varchar(80) PRIMARY KEY,
-repo varchar(80),
+id VARCHAR(80) PRIMARY KEY,
+repo VARCHAR(80),
 commitTime timestamp,
-interval integer,
-author varchar(255),
-parent varchar(80),
-merge varchar(80),
-tagline varchar(255),
+interval INTEGER,
+author VARCHAR(255),
+parent VARCHAR(80),
+merge VARCHAR(80),
+tagline VARCHAR(255),
 message text,
-changed integer,
-added integer,
-modified integer,
-deleted integer,
+changed INTEGER,
+added INTEGER,
+modified INTEGER,
+deleted INTEGER,
 binaries INTEGER,
 effect INTEGER,
 reach INTEGER,
-ref varchar(255));
+ref VARCHAR(255),
+stick INTEGER);
 """
 
 
@@ -49,7 +50,7 @@ INSERT INTO commits VALUES (
   ?, ?, ?, ?,
   ?, ?, ?, ?,
   ?, ?, ?, ?,
-  ?)  ON CONFLICT(id)
+  ?, ?)  ON CONFLICT(id)
   DO UPDATE SET
   ref = EXCLUDED.ref, author = EXCLUDED.author,
   effect = EXCLUDED.effect, reach = EXCLUDED.reach
@@ -57,22 +58,23 @@ INSERT INTO commits VALUES (
 
 val createChangesTable = """
 CREATE TABLE IF NOT EXISTS changes(
-id varchar(80),
-path varchar(255),
-section Integer,
-added Integer,
-modified Integer,
-deleted Integer,
-binaries boolean,
-effect integer,
+id VARCHAR(80),
+serial INTEGER,
+path VARCHAR(255),
+section INTEGER,
+added INTEGER,
+modified INTEGER,
+deleted INTEGER,
+binaries BOOLEAN,
+effect INTEGER,
+stick INTEGER,
 PRIMARY KEY(id, path))
-
 """
 
 val insertChanges = """
 INSERT INTO changes VALUES(
-  ?, ?, ?, ?,
-  ?, ?, ?, ?) ON CONFLICT(id, path)
+  ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?) ON CONFLICT(id, path)
   DO UPDATE SET effect = EXCLUDED.effect
 """
 /*
@@ -122,6 +124,7 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
     stmt.setInt(++i, c.effect)
     stmt.setInt(++i, c.reach)
     stmt.setString(++i, c.refs)
+    stmt.setInt(++i, 0)
     stmt.addBatch()
 
     cc++
@@ -145,18 +148,22 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
       continue
     }
 
+    var serial:Int = 0
+
     for (ch in c.changes) {
       var i = 0
 
       stmt.setString(++i, c.id)
+      stmt.setInt(++i, serial++)
       stmt.setString(++i, ch.path)
       stmt.setInt(++i, ch.section)
       stmt.setInt(++i, ch.lineAdded)
-      stmt.setInt(++i, ch.lineModified)
 
+      stmt.setInt(++i, ch.lineModified)
       stmt.setInt(++i, ch.lineDeleted)
       stmt.setBoolean(++i, ch.binary)
       stmt.setInt(++i, ch.effect)
+      stmt.setInt(++i, 0)
 
       stmt.addBatch()
       cc++
