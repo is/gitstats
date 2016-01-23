@@ -2,6 +2,7 @@ package us.yuxin.gitstats
 
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.PreparedStatement
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.*
@@ -77,13 +78,35 @@ INSERT INTO changes VALUES(
   ?, ?, ?, ?, ?) ON CONFLICT(id, path)
   DO UPDATE SET effect = EXCLUDED.effect
 """
-/*
-val insertChanges = """
-INSERT INTO changes VALUES(
-  ?, ?, ?, ?,
-  ?, ?, ?, ?)
-"""
-*/
+
+class BatchedStatement(val co:Connection, val batchSize:Int) {
+  var statement:PreparedStatement? = null
+  var count:Int = 0
+
+  fun addBatch() {
+    statement!!.addBatch()
+    count += 1;
+
+    if (count > batchSize) {
+      flush()
+    }
+  }
+
+  fun flush() {
+    if (count != 0) {
+      try {
+        statement!!.executeBatch()
+      } catch(ex:java.sql.BatchUpdateException) {
+        println("----")
+        println(ex.getNextException().message)
+        println("----")
+        throw ex;
+      }
+      co.commit()
+    }
+    count = 0
+  }
+}
 
 
 fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
@@ -98,51 +121,40 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
   co.commit()
   stmt0.close()
 
-  var cc = 0;
-
-  var stmt = co.prepareStatement(insertCommits)
+  val bstmt = BatchedStatement(co, batchSize)
+  val stmt1 = co.prepareStatement(insertCommits)
+  bstmt.statement = stmt1
 
   for (c in cs.commits) {
     var i = 0
-    stmt.setString(++i, c.id)
-    stmt.setString(++i, repoName)
-    stmt.setTimestamp(++i,
+    stmt1.setString(++i, c.id)
+    stmt1.setString(++i, repoName)
+    stmt1.setTimestamp(++i,
       Timestamp.from(Instant.ofEpochSecond(c.commitTime.toLong())))
-    stmt.setInt(++i, c.interval)
-    stmt.setString(++i, c.author)
-    stmt.setString(++i, c.parent)
+    stmt1.setInt(++i, c.interval)
+    stmt1.setString(++i, c.author)
+    stmt1.setString(++i, c.parent)
 
-    stmt.setString(++i, c.merge)
-    stmt.setString(++i, c.message.split("\\n")[0].trim())
-    stmt.setString(++i, c.message)
-    stmt.setInt(++i, c.changes?.size?:0)
-    stmt.setInt(++i, c.lineAdded)
-    stmt.setInt(++i, c.lineModified)
+    stmt1.setString(++i, c.merge)
+    stmt1.setString(++i, c.message.split("\\n")[0].trim())
+    stmt1.setString(++i, c.message)
+    stmt1.setInt(++i, c.changes?.size?:0)
+    stmt1.setInt(++i, c.lineAdded)
+    stmt1.setInt(++i, c.lineModified)
 
-    stmt.setInt(++i, c.lineDeleted)
-    stmt.setInt(++i, c.binary)
-    stmt.setInt(++i, c.effect)
-    stmt.setInt(++i, c.reach)
-    stmt.setString(++i, c.refs)
-    stmt.setInt(++i, 0)
-    stmt.addBatch()
-
-    cc++
-    if (cc > batchSize) {
-      stmt.executeBatch()
-      co.commit()
-      cc = 0
-    }
+    stmt1.setInt(++i, c.lineDeleted)
+    stmt1.setInt(++i, c.binary)
+    stmt1.setInt(++i, c.effect)
+    stmt1.setInt(++i, c.reach)
+    stmt1.setString(++i, c.refs)
+    stmt1.setInt(++i, 0)
+    bstmt.addBatch()
   }
-
-  if (cc > 0) {
-    stmt.executeBatch()
-    co.commit()
-    cc = 0
-  }
+  bstmt.flush()
 
 
-  stmt = co.prepareStatement(insertChanges)
+  val stmt2 = co.prepareStatement(insertChanges)
+  bstmt.statement = stmt2
   for (c in cs.commits) {
     if (c.changes == null) {
       continue
@@ -153,32 +165,21 @@ fun saveCommitSetToDatabase(co:Connection, cs:CommitSet):Unit {
     for (ch in c.changes) {
       var i = 0
 
-      stmt.setString(++i, c.id)
-      stmt.setInt(++i, serial++)
-      stmt.setString(++i, ch.path)
-      stmt.setInt(++i, ch.section)
-      stmt.setInt(++i, ch.lineAdded)
+      stmt2.setString(++i, c.id)
+      stmt2.setInt(++i, serial++)
+      stmt2.setString(++i, ch.path)
+      stmt2.setInt(++i, ch.section)
+      stmt2.setInt(++i, ch.lineAdded)
 
-      stmt.setInt(++i, ch.lineModified)
-      stmt.setInt(++i, ch.lineDeleted)
-      stmt.setBoolean(++i, ch.binary)
-      stmt.setInt(++i, ch.effect)
-      stmt.setInt(++i, 0)
+      stmt2.setInt(++i, ch.lineModified)
+      stmt2.setInt(++i, ch.lineDeleted)
+      stmt2.setBoolean(++i, ch.binary)
+      stmt2.setInt(++i, ch.effect)
+      stmt2.setInt(++i, 0)
 
-      stmt.addBatch()
-      cc++
-
-      if (cc > batchSize) {
-        stmt.executeBatch()
-        co.commit()
-        cc = 0
-      }
+      bstmt.addBatch()
     }
-    if (cc > 0) {
-      stmt.executeBatch()
-      co.commit()
-      cc = 0
-    }
+    bstmt.flush()
   }
 }
 
