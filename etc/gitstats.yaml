@@ -1,0 +1,14 @@
+threads: 1
+useCommitCache: true
+workspace: /Users/is/ws/gitstats
+database: false
+
+remoteTemplate:
+  github: "https://github.com/<p1>/<p2>.git"
+  gitcafe: "https://gitcafe.com/<p1>/<p2>.git"
+
+#repositories:
+#  - name: gitstats
+#    remote:
+#      github: .github__is__gitstats
+#      gitcafe: .gitcafe__is__gitstats
