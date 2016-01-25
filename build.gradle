@@ -26,7 +26,7 @@ repositories {
 
 dependencies {
 	compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-	compile 'io.reactivex:rxkotlin:0.30.1'
+	// compile 'io.reactivex:rxkotlin:0.30.1'
 
 	compile ('org.eclipse.jgit:org.eclipse.jgit:4.1.1.201511131810-r') {
 		exclude group: 'commons-logging'
@@ -43,10 +43,9 @@ dependencies {
 	compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:$jackson_version"
 	compile "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$jackson_version"
 
+	compile 'com.squareup.okhttp:okhttp:2.7.2'
 	compile 'org.yaml:snakeyaml:1.16'
 	compile 'org.antlr:ST4:4.0.8'
-
-
 
 	// compile 'org.slf4j:slf4j-api:1.7.13'
   runtime 'org.postgresql:postgresql:9.4.1207'
