@@ -115,7 +115,7 @@ object Scanner {
     markCommits(repo_, commits_, branches_)
 
     val heads_ = branches_.filter {repo_.resolve(it) != null}
-      .toMapBy({it}, {repo_.resolve(it).name})
+      .associateBy({it}, {repo_.resolve(it).name})
 
     val commitSet = CommitSet(
       name = ri.name!!,
