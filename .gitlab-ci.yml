@@ -1,0 +1,11 @@
+stages:
+ - build
+
+before_script:
+  - source /ci/.java.env
+  
+build0:
+  stage: build
+  image: is/ci-java8:latest
+  script:
+    - gradle build
